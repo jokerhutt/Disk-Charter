@@ -1,0 +1,21 @@
+{
+  "images" : [
+    {
+      "filename" : "7680-4320-gradient-blur-4k-wallapapers-v0-6u0dhbv51tbb1.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
