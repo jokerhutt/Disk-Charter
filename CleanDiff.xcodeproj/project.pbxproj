@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FB481BF32E36BB0600BF4B4C /* FullDiskAccess in Frameworks */ = {isa = PBXBuildFile; productRef = FB481BF22E36BB0600BF4B4C /* FullDiskAccess */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		FB481BCF2E36B95C00BF4B4C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB481BF32E36BB0600BF4B4C /* FullDiskAccess in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = CleanDiff;
 			packageProductDependencies = (
+				FB481BF22E36BB0600BF4B4C /* FullDiskAccess */,
 			);
 			productName = CleanDiff;
 			productReference = FB481BC02E36B95A00BF4B4C /* CleanDiff.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = FB481BB72E36B95A00BF4B4C;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FB481BF12E36BB0600BF4B4C /* XCRemoteSwiftPackageReference "FullDiskAccess" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FB481BC12E36B95A00BF4B4C /* Products */;
 			projectDirPath = "";
@@ -541,6 +550,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FB481BF12E36BB0600BF4B4C /* XCRemoteSwiftPackageReference "FullDiskAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/inket/FullDiskAccess";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FB481BF22E36BB0600BF4B4C /* FullDiskAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FB481BF12E36BB0600BF4B4C /* XCRemoteSwiftPackageReference "FullDiskAccess" */;
+			productName = FullDiskAccess;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FB481BB82E36B95A00BF4B4C /* Project object */;
 }
