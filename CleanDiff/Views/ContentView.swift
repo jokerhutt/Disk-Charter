@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var phase: AppPhase = .welcome
     @StateObject private var accessChecker = FullDiskAccessChecker()
-
+    
     var body: some View {
-        
         ZStack {
             
             Image("MenuBackgroundImage")
@@ -12,31 +12,14 @@ struct ContentView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
             
-            VStack(spacing: 20) {
-                
-                Text(accessChecker.isGranted ? "✅ Access Granted" : "❌ No Access")
-
-                Button("Grant Full Disk Access") {
-                    accessChecker.openSettingsPrompt()
-                }
-
-                Button("List Documents") {
-                    guard accessChecker.isGranted else {
-                        print("Permission not granted.")
-                        return
-                    }
-
-                    switch FileService.listDocumentsDirectoryContents() {
-                    case .success(let files):
-                        files.forEach { print("Found: \($0)") }
-                    case .failure(let error):
-                        print("Failed to read directory:", error)
-                    }
-                }
+            switch phase {
+            case .welcome:
+                WelcomeView(onContinue: { phase = .requestPermission })
+            case .requestPermission:
+                RequestPermissionsView(accessChecker: accessChecker, onContinue: { phase = .dashboard })
+            case .dashboard:
+                EmptyView()
             }
-        }
-        .onAppear {
-            accessChecker.refreshFullDiskAccessStatus()
         }
     }
 }
