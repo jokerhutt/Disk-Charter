@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var phase: AppPhase = .welcome
+    
+    
     @StateObject private var accessChecker = FullDiskAccessChecker()
     
     var body: some View {
@@ -14,12 +16,26 @@ struct ContentView: View {
             
             switch phase {
             case .welcome:
-                WelcomeView(onContinue: { phase = .requestPermission })
+                WelcomeView(onContinue: { evaluateAccessStatus() })
             case .requestPermission:
                 RequestPermissionsView(accessChecker: accessChecker, onContinue: { phase = .dashboard })
             case .dashboard:
-                EmptyView()
+                DashboardView()
             }
         }
     }
+    
+    private func evaluateAccessStatus() {
+        accessChecker.refreshFullDiskAccessStatus()
+
+        if accessChecker.isGranted {
+            phase = .dashboard
+        } else {
+            phase = .requestPermission
+        }
+    }
+    
 }
+
+
+
