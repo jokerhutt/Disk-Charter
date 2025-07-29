@@ -11,7 +11,7 @@ struct DashboardView: View {
     
     var body: some View {
         VStack {
-            Text("Welcome to Disk Storage Manager, David")
+            Text("Welcome to Disk Charter, David")
             
             if fileTreeText.isEmpty && !hasScanned {
                 Button("Print N Nodes deep", action: {
@@ -47,3 +47,7 @@ struct DashboardView: View {
     }
     
 }
+
+
+
+

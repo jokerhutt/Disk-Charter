@@ -7,7 +7,7 @@
 
 import XCTest
 
-final class CleanDiffUITestsLaunchTests: XCTestCase {
+final class DiskCharterUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

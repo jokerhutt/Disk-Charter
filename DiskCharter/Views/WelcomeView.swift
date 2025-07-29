@@ -6,7 +6,7 @@ struct WelcomeView: View {
     
     var body: some View {
         VStack {
-            Text("👋 Welcome to CleanDifferent")
+            Text("👋 Welcome to DiskCharter")
             Button("Continue", action: onContinue)
         }
     }

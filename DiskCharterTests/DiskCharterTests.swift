@@ -6,9 +6,9 @@
 //
 
 import Testing
-@testable import CleanDiff
+@testable import DiskCharter
 
-struct CleanDiffTests {
+struct DiskCharterTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.
