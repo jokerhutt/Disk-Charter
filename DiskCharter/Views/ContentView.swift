@@ -8,10 +8,11 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            
-            Image("MenuBackgroundImage")
-                .resizable()
-                .scaledToFill()
+        
+            VisualEffectBlur()
+                .ignoresSafeArea() // Covers entire window
+
+            Color.white.opacity(0.05)
                 .ignoresSafeArea()
             
             switch phase {
@@ -23,6 +24,7 @@ struct ContentView: View {
                 DashboardView()
             }
         }
+        
     }
     
     private func evaluateAccessStatus() {
