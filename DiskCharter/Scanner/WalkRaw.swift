@@ -85,7 +85,6 @@ class WalkRaw {
             }
         }
 
-
         let batches = nextBatch.chunked(into: batchSize)
         for batch in batches {
             group.enter()
@@ -99,13 +98,15 @@ class WalkRaw {
     private func buildTree(rootPath: String) -> RawFileNode? {
         guard let nodeInfo = nodes[rootPath] else { return nil }
         let childNodes = nodeInfo.children.compactMap { buildTree(rootPath: $0) }
+        let totalSize = childNodes.reduce(nodeInfo.size) { $0 + $1.size }
         return RawFileNode(
             name: nodeInfo.name,
             path: rootPath,
-            size: nodeInfo.size,
+            size: totalSize,
             children: childNodes.isEmpty ? nil : childNodes
         )
     }
+    
 }
 
 

@@ -29,9 +29,11 @@ struct DashboardView: View {
             }
             
             if fileTreeText.count > 0 {
-                Text("\(fileTreeText)")
+                Text(fileTreeText)
+                    .font(.system(.body, design: .monospaced)) // Optional: monospaced for alignment
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
             }
-            
         }
     }
     
@@ -40,21 +42,28 @@ struct DashboardView: View {
             let start = Date()
 
             let rawWalkClass = WalkRaw()
-            rawWalkClass.start(path: "/Users/davidglogowski") { _ in
+            rawWalkClass.start(path: "/") { root in
                 let end = Date()
                 let duration = end.timeIntervalSince(start)
 
-                continuation.resume(returning: """
-                ⏱ Took \(String(format: "%.2f", duration)) seconds
-                """)
+                guard let root = root, let children = root.children else {
+                    continuation.resume(returning: "❌ Failed to scan /")
+                    return
+                }
+
+                var result = "Top-level directories under /\n"
+
+                for child in children {
+                    let sizeInGB = Double(child.size) / 1_073_741_824  // GB
+                    let namePadded = child.name.padding(toLength: 25, withPad: " ", startingAt: 0)
+                    result += "\(namePadded) \(String(format: "%8.2f", sizeInGB)) GB\n"
+                }
+
+                let durationStr = String(format: "%.2f", duration)
+                result += "\n⏱ Took \(durationStr) seconds"
+
+                continuation.resume(returning: result)
             }
         }
     }
-    
-    
-    
 }
-
-
-
-
