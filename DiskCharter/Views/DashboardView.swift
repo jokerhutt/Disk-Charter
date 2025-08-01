@@ -1,10 +1,8 @@
 import SwiftUI
 
 struct DashboardView: View {
-    
-    let fileService = FileService()
-    
-    @State private var currentDirectory: URL? = nil
+        
+    @State private var currentDirectory: String? = nil
     @State private var fileTreeText: String = ""
     
     @State private var hasScanned: Bool = false
@@ -16,16 +14,16 @@ struct DashboardView: View {
             if fileTreeText.isEmpty && !hasScanned {
                 Button("Print N Nodes deep", action: {
                     hasScanned = true
-                    fileTreeText = getFileTreeText()
+                    fileTreeText = getWalkDir()
                 })
             }
             
             Button("Print Current Directory", action: {
-                currentDirectory = ScannerUtils.getCurrentDirectoryUrl()
+                currentDirectory = "/"
             })
             
             if let currentDirectory = currentDirectory {
-                Text("Your current directory is: \(currentDirectory.path)")
+                Text("Your current directory is: \(currentDirectory)")
             }
             
             if fileTreeText.count > 0 {
@@ -35,15 +33,20 @@ struct DashboardView: View {
         }
     }
     
-    private func getFileTreeText() -> String {
-        guard let directory = currentDirectory else { return "" }
-        print("directory is: \(directory)")
-        let node = Scanner.scanDirectory(
-            start: directory, curr: directory, depth: 0, maxDepth: 3)
+    private func getWalkDir () -> String {
         
-        print("Node url is: \(node.url)")
+        let start = Date()
+
+        let rawWalkClass = WalkRaw()
         
-        return ScannerUtils.buildFileTreeText(node)
+        rawWalkClass.walkTree(path: "/Users/davidglogowski")
+
+        let end = Date()
+
+        let duration = end.timeIntervalSince(start)
+        return """
+        ⏱ Took \(String(format: "%.2f", duration)) seconds
+        """
     }
     
 }
