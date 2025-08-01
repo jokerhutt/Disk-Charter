@@ -14,7 +14,9 @@ struct DashboardView: View {
             if fileTreeText.isEmpty && !hasScanned {
                 Button("Print N Nodes deep", action: {
                     hasScanned = true
-                    fileTreeText = getWalkDir()
+                    Task {
+                        fileTreeText = await getWalkDir()
+                    }
                 })
             }
             
@@ -33,21 +35,23 @@ struct DashboardView: View {
         }
     }
     
-    private func getWalkDir () -> String {
-        
-        let start = Date()
+    private func getWalkDir() async -> String {
+        await withCheckedContinuation { continuation in
+            let start = Date()
 
-        let rawWalkClass = WalkRaw()
-        
-        rawWalkClass.walkTree(path: "/Users/davidglogowski")
+            let rawWalkClass = WalkRaw()
+            rawWalkClass.start(path: "/Users/davidglogowski") { _ in
+                let end = Date()
+                let duration = end.timeIntervalSince(start)
 
-        let end = Date()
-
-        let duration = end.timeIntervalSince(start)
-        return """
-        ⏱ Took \(String(format: "%.2f", duration)) seconds
-        """
+                continuation.resume(returning: """
+                ⏱ Took \(String(format: "%.2f", duration)) seconds
+                """)
+            }
+        }
     }
+    
+    
     
 }
 
