@@ -39,3 +39,15 @@ class RawFileNode {
     
     
 }
+
+extension RawFileNode: Identifiable {
+    var id: String { path }  // Use 'path' as the unique identifier
+}
+
+extension RawFileNode {
+    func pathComponents(upToDepth depth: Int) -> String {
+        let components = path.split(separator: "/")
+        let prefixDepth = min(depth + 1, components.count)
+        return components.prefix(prefixDepth).joined(separator: "/")
+    }
+}

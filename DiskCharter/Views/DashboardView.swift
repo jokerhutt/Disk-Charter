@@ -4,66 +4,68 @@ struct DashboardView: View {
         
     @State private var currentDirectory: String? = nil
     @State private var fileTreeText: String = ""
-    
+    @State private var rootNode: RawFileNode? = nil
     @State private var hasScanned: Bool = false
     
     var body: some View {
-        VStack {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Welcome to Disk Charter, David")
+                .font(.title)
             
             if fileTreeText.isEmpty && !hasScanned {
-                Button("Print N Nodes deep", action: {
+                Button("Start Scan") {
                     hasScanned = true
                     Task {
-                        fileTreeText = await getWalkDir()
+                        await scanAndShowSunburst()
                     }
-                })
+                }
             }
             
-            Button("Print Current Directory", action: {
-                currentDirectory = "/"
-            })
-            
-            if let currentDirectory = currentDirectory {
-                Text("Your current directory is: \(currentDirectory)")
-            }
-            
-            if fileTreeText.count > 0 {
-                Text(fileTreeText)
-                    .font(.system(.body, design: .monospaced)) // Optional: monospaced for alignment
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
+            if let rootNode = rootNode {
+                HStack(alignment: .center, spacing: 100) {  // <-- Spacing between ScrollView and SunburstView
+                    ScrollView(.vertical) {
+                        Text(fileTreeText)
+                            .font(.system(.body, design: .monospaced))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxHeight: 400)
+                    }
+                    .frame(width: 400, height: 400)
+
+                    VStack {
+                        SunburstView(root: rootNode)
+                            .frame(width: 300)  // Don't constrain height here
+                        Spacer(minLength: 0)  // Pushes SunburstView up if needed
+                    }
+                    .frame(height: 400)  // Matches ScrollView height, aligns center
+                }
+                .frame(maxWidth: 1200, alignment: .leading)
+                .padding()
             }
         }
+        .padding()
     }
     
-    private func getWalkDir() async -> String {
-        await withCheckedContinuation { continuation in
-            let start = Date()
-
-            let rawWalkClass = WalkRaw()
-            rawWalkClass.start(path: "/") { root in
-                let end = Date()
-                let duration = end.timeIntervalSince(start)
-
-                guard let root = root, let children = root.children else {
-                    continuation.resume(returning: "❌ Failed to scan /")
-                    return
-                }
-
-                var result = "Top-level directories under /\n"
-
-                for child in children {
-                    let sizeInGB = Double(child.size) / 1_073_741_824  // GB
-                    let namePadded = child.name.padding(toLength: 25, withPad: " ", startingAt: 0)
-                    result += "\(namePadded) \(String(format: "%8.2f", sizeInGB)) GB\n"
-                }
-
-                let durationStr = String(format: "%.2f", duration)
-                result += "\n⏱ Took \(durationStr) seconds"
-
-                continuation.resume(returning: result)
+    private func scanAndShowSunburst() async {
+        let start = Date()
+        
+        let rawWalkClass = WalkRaw()
+        if let root = await rawWalkClass.start(path: "/Users/davidglogowski/codemain") {
+            self.rootNode = root  // Update SunburstView trigger
+            
+            var result = "Top-level directories under /\n"
+            for child in root.children ?? [] {
+                let sizeInGB = Double(child.size) / 1_073_741_824  // GB
+                let namePadded = child.name.padding(toLength: 25, withPad: " ", startingAt: 0)
+                result += "\(namePadded) \(String(format: "%8.2f", sizeInGB)) GB\n"
             }
+            
+            let duration = Date().timeIntervalSince(start)
+            let durationStr = String(format: "%.2f", duration)
+            result += "\n⏱ Took \(durationStr) seconds"
+            
+            self.fileTreeText = result
+        } else {
+            self.fileTreeText = "❌ Failed to scan /"
         }
     }
 }

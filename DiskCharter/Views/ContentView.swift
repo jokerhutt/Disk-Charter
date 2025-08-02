@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var phase: AppPhase = .welcome
+    @State private var phase: AppPhase = .dashboard
     
     
     @StateObject private var accessChecker = FullDiskAccessChecker()

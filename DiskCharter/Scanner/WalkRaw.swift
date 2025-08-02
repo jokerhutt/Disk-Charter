@@ -14,7 +14,7 @@ class WalkRaw {
     private var visitedLock = os_unfair_lock_s()
     private var nodesLock = os_unfair_lock_s()
 
-    func start(path: String, completion: @escaping (RawFileNode?) -> Void) {
+    func start(path: String) async -> RawFileNode? {
         group.enter()
 
         queue.async {
@@ -22,13 +22,15 @@ class WalkRaw {
             self.group.leave()
         }
 
-        DispatchQueue.global().async {
-            self.group.wait()
-            let tree = self.buildTree(rootPath: path)
-            DispatchQueue.main.async {
-                completion(tree)
+        // Wait for all tasks to complete
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async {
+                self.group.wait()
+                continuation.resume()
             }
         }
+
+        return buildTree(rootPath: path)
     }
 
     private func walkTree(paths: [String]) {
