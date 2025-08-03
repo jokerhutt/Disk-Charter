@@ -22,7 +22,7 @@ struct DashboardView: View {
             }
             
             if let rootNode = rootNode {
-                HStack(alignment: .center, spacing: 100) {  // <-- Spacing between ScrollView and SunburstView
+                HStack(alignment: .center, spacing: 100) {
                     ScrollView(.vertical) {
                         Text(fileTreeText)
                             .font(.system(.body, design: .monospaced))
@@ -33,10 +33,10 @@ struct DashboardView: View {
 
                     VStack {
                         SunburstView(root: rootNode)
-                            .frame(width: 300)  // Don't constrain height here
-                        Spacer(minLength: 0)  // Pushes SunburstView up if needed
+                            .frame(width: 300)
+                        Spacer(minLength: 0)
                     }
-                    .frame(height: 400)  // Matches ScrollView height, aligns center
+                    .frame(height: 400)
                 }
                 .frame(maxWidth: 1200, alignment: .leading)
                 .padding()
@@ -50,11 +50,11 @@ struct DashboardView: View {
         
         let rawWalkClass = WalkRaw()
         if let root = await rawWalkClass.start(path: "/Users/davidglogowski/codemain") {
-            self.rootNode = root  // Update SunburstView trigger
+            self.rootNode = root
             
             var result = "Top-level directories under /\n"
             for child in root.children ?? [] {
-                let sizeInGB = Double(child.size) / 1_073_741_824  // GB
+                let sizeInGB = Double(child.size) / 1_073_741_824
                 let namePadded = child.name.padding(toLength: 25, withPad: " ", startingAt: 0)
                 result += "\(namePadded) \(String(format: "%8.2f", sizeInGB)) GB\n"
             }
