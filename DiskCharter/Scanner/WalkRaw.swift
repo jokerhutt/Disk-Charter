@@ -22,7 +22,6 @@ class WalkRaw {
             self.group.leave()
         }
 
-        // Wait for all tasks to complete
         await withCheckedContinuation { continuation in
             DispatchQueue.global().async {
                 self.group.wait()
