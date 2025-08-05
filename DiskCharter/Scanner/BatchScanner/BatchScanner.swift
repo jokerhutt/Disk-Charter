@@ -3,11 +3,11 @@ import Darwin
 import Foundation
 
 
-class WalkRaw {
+class BatchScanner {
     private let queue = DispatchQueue.global(qos: .userInteractive)
     private let group = DispatchGroup()
 
-    private let batchSize = 512  // Tune this as needed
+    private let batchSize = 512
 
     private var nodes = [String: (name: String, size: Int, children: [String])]()
     private var visitedInodes = Set<UInt64>()

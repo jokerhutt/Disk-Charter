@@ -30,13 +30,6 @@ struct DashboardView: View {
                             .frame(maxHeight: 400)
                     }
                     .frame(width: 400, height: 400)
-
-                    VStack {
-                        SunburstView(root: rootNode)
-                            .frame(width: 300)
-                        Spacer(minLength: 0)
-                    }
-                    .frame(height: 400)
                 }
                 .frame(maxWidth: 1200, alignment: .leading)
                 .padding()
@@ -48,8 +41,8 @@ struct DashboardView: View {
     private func scanAndShowSunburst() async {
         let start = Date()
         
-        let rawWalkClass = WalkRaw()
-        if let root = await rawWalkClass.start(path: "/Users/davidglogowski/codemain") {
+        let batchScannerClass = BatchScanner()
+        if let root = await batchScannerClass.start(path: "/Users/davidglogowski/codemain") {
             self.rootNode = root
             
             var result = "Top-level directories under /\n"
