@@ -30,6 +30,10 @@ struct DashboardView: View {
                             .frame(maxHeight: 400)
                     }
                     .frame(width: 400, height: 400)
+                    
+                    FileSystemSunburstView(rootFileNode: rootNode)
+                        .frame(width: 600, height: 600)
+                    
                 }
                 .frame(maxWidth: 1200, alignment: .leading)
                 .padding()
@@ -42,7 +46,7 @@ struct DashboardView: View {
         let start = Date()
         
         let batchScannerClass = BatchScanner()
-        if let root = await batchScannerClass.start(path: "/Users/davidglogowski/codemain") {
+        if let root = await batchScannerClass.start(path: "/Users/davidglogowski/Desktop/Air Videos") {
             self.rootNode = root
             
             var result = "Top-level directories under /\n"
