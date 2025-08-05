@@ -1,3 +1,4 @@
+import Foundation
 final class BlockingQueue<T> {
     private var queue = [T]()
     private var closed = false
