@@ -1,13 +1,12 @@
 import SwiftUI
-import SunburstDiagram  // Package
+import SunburstDiagram
 
 struct FileSystemSunburstView: View {
-    let rootFileNode: RawFileNode  // <-- You pass it dynamically!
+    let rootFileNode: RawFileNode
 
     var body: some View {
         let rootNode = convertToNode(rawNode: rootFileNode, baseColor: NSColor.systemBlue)
         let configuration = SunburstConfiguration(nodes: [rootNode], calculationMode: .parentIndependent())
-
         SunburstView(configuration: configuration)
     }
 
@@ -22,6 +21,7 @@ struct FileSystemSunburstView: View {
             }
             return Node(
                 name: rawNode.name,
+                showName: false,
                 value: nil,
                 backgroundColor: adjustedColor,
                 children: childNodes
@@ -29,6 +29,7 @@ struct FileSystemSunburstView: View {
         } else {
             return Node(
                 name: rawNode.name,
+                showName: false,
                 value: Double(rawNode.size),
                 backgroundColor: adjustedColor
             )
