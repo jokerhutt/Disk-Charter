@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var phase: AppPhase = .dashboard
+    @State private var phase: AppPhase = .welcome
     
     
     @StateObject private var accessChecker = FullDiskAccessChecker()
@@ -10,7 +10,7 @@ struct ContentView: View {
         ZStack {
         
             VisualEffectBlur()
-                .ignoresSafeArea() // Covers entire window
+                .ignoresSafeArea()
 
             Color.white.opacity(0.05)
                 .ignoresSafeArea()
