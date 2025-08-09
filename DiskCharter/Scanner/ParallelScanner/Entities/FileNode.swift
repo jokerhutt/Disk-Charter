@@ -34,7 +34,6 @@ final class FileNode {
         _ = pendingChildDirs.wrappingDecrement(by: 1, ordering: .acquiringAndReleasing)
         return pendingChildDirs.load(ordering: .acquiring)
     }
-
     @inline(__always) func finalizeIfNeeded() -> UInt64? {
         if finalized.exchange(true, ordering: .acquiringAndReleasing) { return nil }
         let total = aggregatedSize.load(ordering: .relaxed)

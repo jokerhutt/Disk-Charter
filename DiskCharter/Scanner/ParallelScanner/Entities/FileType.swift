@@ -1,3 +1,1 @@
-enum FileType {
-    case file, directory, symlink, unknown
-}
+enum FileType { case file, directory, symlink, unknown }

@@ -23,11 +23,11 @@ final class BlockingQueue<T> {
         condition.unlock()
     }
 
-    func enqueueMany(_ elements: [T]) {
+    func enqueueMany(_ items: [T]) {
         condition.lock()
         guard !closed else { condition.unlock(); return }
-        if count + elements.count > storage.count { grow(toFit: count + elements.count) }
-        for e in elements {
+        if count + items.count > storage.count { grow(toFit: count + items.count) }
+        for e in items {
             storage[tail] = e
             tail = (tail &+ 1) & (storage.count - 1)
             count &+= 1
@@ -48,9 +48,7 @@ final class BlockingQueue<T> {
         return e!
     }
 
-    func close() {
-        condition.lock(); closed = true; condition.broadcast(); condition.unlock()
-    }
+    func close() { condition.lock(); closed = true; condition.broadcast(); condition.unlock() }
 
     private func grow() { grow(toFit: storage.count << 1) }
     private func grow(toFit need: Int) {
