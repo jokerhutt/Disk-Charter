@@ -29,13 +29,11 @@ struct DashboardView: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxHeight: 400)
                     }
-                    .frame(width: 400, height: 400)
                     
                     FileSystemSunburstView(rootFileNode: rootNode)
-                        .frame(width: 600, height: 600)
                     
                 }
-                .frame(maxWidth: 1200, alignment: .leading)
+                .frame(maxWidth: 1600, alignment: .leading)
                 .padding()
             }
         }
@@ -44,25 +42,79 @@ struct DashboardView: View {
     
     private func scanAndShowSunburst() async {
         let start = Date()
-        
+
         let batchScannerClass = BatchScanner()
-        if let root = await batchScannerClass.start(path: "/Users/davidglogowski/Desktop/Air Videos") {
-            self.rootNode = root
-            
+        if let root = await batchScannerClass.start(path: "/Users/davidglogowski/Documents") {
+            let groupedRoot = groupSmallChildren(node: root, thresholdBytes: 100 * 1_048_576) // 100 MB
+
+            self.rootNode = groupedRoot
+
+            print("\n===== FULL SCAN TREE =====")
+            func printRecursive(_ node: RawFileNode, indent: String = "") {
+                let sizeGB = Double(node.size) / 1_073_741_824
+                print("\(indent)📦 \(node.name) — \(String(format: "%.2f", sizeGB)) GB")
+                for child in node.children ?? [] {
+                    printRecursive(child, indent: indent + "    ")
+                }
+            }
+            printRecursive(groupedRoot)
+            print("===== END OF TREE =====\n")
+
             var result = "Top-level directories under /\n"
-            for child in root.children ?? [] {
+            for child in groupedRoot.children ?? [] {
                 let sizeInGB = Double(child.size) / 1_073_741_824
                 let namePadded = child.name.padding(toLength: 25, withPad: " ", startingAt: 0)
                 result += "\(namePadded) \(String(format: "%8.2f", sizeInGB)) GB\n"
             }
-            
+
             let duration = Date().timeIntervalSince(start)
             let durationStr = String(format: "%.2f", duration)
             result += "\n⏱ Took \(durationStr) seconds"
-            
+
             self.fileTreeText = result
         } else {
             self.fileTreeText = "❌ Failed to scan /"
         }
     }
+    
+    private func groupSmallChildren(node: RawFileNode, thresholdBytes: Int) -> RawFileNode {
+        guard let children = node.children else { return node }
+
+        var large: [RawFileNode] = []
+        var small: [RawFileNode] = []
+
+        for child in children {
+            if child.size < thresholdBytes {
+                small.append(child)
+            } else {
+                large.append(groupSmallChildren(node: child, thresholdBytes: thresholdBytes))
+            }
+        }
+
+        var newChildren = large
+
+        if !small.isEmpty {
+            let totalSize = small.reduce(0) { $0 + $1.size }
+            let otherNode = RawFileNode(
+                name: "Other",
+                path: node.path + "/Other",
+                size: totalSize,
+                children: nil
+            )
+            newChildren.append(otherNode)
+        }
+
+        let newTotalSize = newChildren.reduce(0) { $0 + $1.size }
+
+        return RawFileNode(
+            name: node.name,
+            path: node.path,
+            size: newTotalSize,
+            children: newChildren.isEmpty ? nil : newChildren
+        )
+    }
+    
+    
 }
+
+

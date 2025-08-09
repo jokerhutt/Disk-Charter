@@ -111,6 +111,8 @@ class BatchScanner {
 }
 
 
+
+
 extension Array {
     func chunked(into size: Int) -> [[Element]] {
         stride(from: 0, to: count, by: size).map {

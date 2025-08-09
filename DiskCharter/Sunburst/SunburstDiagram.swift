@@ -3,14 +3,38 @@ import SunburstDiagram
 
 struct FileSystemSunburstView: View {
     let rootFileNode: RawFileNode
+    @StateObject private var configuration: SunburstConfiguration
 
+    init(rootFileNode: RawFileNode) {
+        self.rootFileNode = rootFileNode  // ✅ Initialize stored property first
+        let rootNode = Self.convertToNode(rawNode: rootFileNode, baseColor: NSColor.systemBlue)
+        let config = SunburstConfiguration(nodes: [rootNode], calculationMode: .parentIndependent())
+        
+        _configuration = StateObject(wrappedValue: config)
+        
+
+    }
+    
     var body: some View {
-        let rootNode = convertToNode(rawNode: rootFileNode, baseColor: NSColor.systemBlue)
-        let configuration = SunburstConfiguration(nodes: [rootNode], calculationMode: .parentIndependent())
-        SunburstView(configuration: configuration)
+        VStack {
+            if let selected = configuration.selectedNode {
+                Text("\(selected.name) — \(formattedSize(from: selected)) GB")
+                    .font(.headline)
+                    .padding(.bottom, 8)
+            }
+
+            SunburstView(configuration: configuration)
+        }
+    }
+    
+    private func formattedSize(from node: Node) -> String {
+        guard let bytes = node.value else { return "—" }
+        let gb = bytes / 1_073_741_824
+        return String(format: "%.2f", gb)
     }
 
-    private func convertToNode(rawNode: RawFileNode, baseColor: NSColor, depth: Int = 0) -> Node {
+
+    private static func convertToNode(rawNode: RawFileNode, baseColor: NSColor, depth: Int = 0) -> Node {
         let adjustedColor = baseColor.blended(withFraction: CGFloat(depth) * 0.05, of: .white) ?? baseColor
 
         if let children = rawNode.children, !children.isEmpty {
@@ -22,7 +46,7 @@ struct FileSystemSunburstView: View {
             return Node(
                 name: rawNode.name,
                 showName: false,
-                value: nil,
+                value: Double(rawNode.size) / 1_073_741_824,
                 backgroundColor: adjustedColor,
                 children: childNodes
             )
@@ -30,7 +54,7 @@ struct FileSystemSunburstView: View {
             return Node(
                 name: rawNode.name,
                 showName: false,
-                value: Double(rawNode.size),
+                value: Double(rawNode.size) / 1_073_741_824,
                 backgroundColor: adjustedColor
             )
         }
