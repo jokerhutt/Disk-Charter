@@ -15,6 +15,6 @@ This project aims to scan a MacOS disk as quickly as possible and provide visual
 ## Scanner(s)
 Currently there are two scanners.
 - The parallel scanner scans the disk by throwing folders into a task queue and having multiple threads work on them at once. Keeps adding new folders to the queue until everything is done.
-  - Time to scan my entire file system: ~90seconds
+  - Time to scan my entire file system: ~58 seconds
 - The batch scanner scans the disk in big batches of folders at a time to reduce locking and speed things up. Builds a map of all files and folders first, then connects them into a tree later.
-  - Time to scan my entire file system: ~96seconds
+  - Time to scan my entire file system: ~96 seconds
