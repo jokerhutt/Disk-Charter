@@ -7,7 +7,7 @@ final class BlockingQueue<T> {
     private var closed = false
     private let condition = NSCondition()
 
-    init(initialCapacity: Int = 2048) {
+    init(initialCapacity: Int = 4096) {
         let cap = max(16, initialCapacity.nextPowerOfTwo())
         storage = Array(repeating: nil, count: cap)
     }
@@ -20,6 +20,19 @@ final class BlockingQueue<T> {
         tail = (tail &+ 1) & (storage.count - 1)
         count &+= 1
         condition.signal()
+        condition.unlock()
+    }
+
+    func enqueueMany(_ elements: [T]) {
+        condition.lock()
+        guard !closed else { condition.unlock(); return }
+        if count + elements.count > storage.count { grow(toFit: count + elements.count) }
+        for e in elements {
+            storage[tail] = e
+            tail = (tail &+ 1) & (storage.count - 1)
+            count &+= 1
+        }
+        condition.broadcast()
         condition.unlock()
     }
 
@@ -39,9 +52,11 @@ final class BlockingQueue<T> {
         condition.lock(); closed = true; condition.broadcast(); condition.unlock()
     }
 
-    private func grow() {
+    private func grow() { grow(toFit: storage.count << 1) }
+    private func grow(toFit need: Int) {
         let old = storage
-        let newCap = old.count << 1
+        var newCap = old.count
+        while newCap < need { newCap <<= 1 }
         var newStore = Array<T?>(repeating: nil, count: newCap)
         for i in 0..<count {
             let idx = (head &+ i) & (old.count - 1)
@@ -54,11 +69,7 @@ final class BlockingQueue<T> {
 private extension Int {
     func nextPowerOfTwo() -> Int {
         var v = self - 1
-        v |= v >> 1
-        v |= v >> 2
-        v |= v >> 4
-        v |= v >> 8
-        v |= v >> 16
+        v |= v >> 1; v |= v >> 2; v |= v >> 4; v |= v >> 8; v |= v >> 16
         #if arch(x86_64) || arch(arm64)
         v |= v >> 32
         #endif
