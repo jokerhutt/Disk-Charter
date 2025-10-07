@@ -4,8 +4,9 @@ import Atomics
 
 
 final class ParallelScanner {
-    private let taskQueue = BlockingQueue<FileNode>()
-    private let dirTaskCount = ManagedAtomic<Int>(0)
+    
+    let taskQueue = BlockingQueue<FileNode>()
+    let dirTaskCount = ManagedAtomic<Int>(0)
 
     private let includeFiles: Bool
     private let maxDepth: Int
@@ -62,11 +63,11 @@ final class ParallelScanner {
 
 
     private func scanDirectory(_ dirNode: FileNode) {
+        
         precondition(dirNode.type == .directory)
 
         if dirNode.depth >= maxDepth {
-            attemptFinalizeAndBubble(dirNode)
-            maybeCloseQueueAfterDirDone()
+            completeDirectoryTask(dirNode);
             return
         }
 
@@ -114,32 +115,7 @@ final class ParallelScanner {
             dirNode.setPendingDirs(0)
         }
 
-        attemptFinalizeAndBubble(dirNode)
-        maybeCloseQueueAfterDirDone()
+        completeDirectoryTask(dirNode);
     }
-
-    private func onChildDirectoryFinished(parent: FileNode, childBytes: UInt64) {
-        parent.addToAggregate(childBytes)
-        if parent.decrementPendingDirAndLoad() == 0 {
-            if let total = parent.finalizeIfNeeded(), let pp = parent.parent {
-                onChildDirectoryFinished(parent: pp, childBytes: total)
-            }
-        }
-    }
-
-    private func attemptFinalizeAndBubble(_ node: FileNode) {
-        if node.loadPendingDirs() == 0 {
-            if let total = node.finalizeIfNeeded(), let p = node.parent {
-                onChildDirectoryFinished(parent: p, childBytes: total)
-            }
-        }
-    }
-
-    private func maybeCloseQueueAfterDirDone() {
-        if dirTaskCount.wrappingDecrementThenLoad(ordering: .acquiringAndReleasing) == 0 {
-            taskQueue.close()
-        }
-    }
-
     
 }
