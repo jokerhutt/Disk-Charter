@@ -8,7 +8,7 @@ final class BlockingQueue<T> {
     private let condition = NSCondition()
 
     init(initialCapacity: Int = 4096) {
-        let cap = max(16, initialCapacity.nextPowerOfTwo())
+        let cap = max(16, initialCapacity.getNextPowerOfTwo())
         storage = Array(repeating: nil, count: cap)
     }
 
@@ -65,7 +65,7 @@ final class BlockingQueue<T> {
     }
 }
 private extension Int {
-    func nextPowerOfTwo() -> Int {
+    func getNextPowerOfTwo() -> Int {
         var v = self - 1
         v |= v >> 1; v |= v >> 2; v |= v >> 4; v |= v >> 8; v |= v >> 16
         #if arch(x86_64) || arch(arm64)
