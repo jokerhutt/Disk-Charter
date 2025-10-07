@@ -8,13 +8,11 @@ final class ParallelScanner {
     private let dirTaskCount = ManagedAtomic<Int>(0)
 
     enum SizeKind { case allocated, logical }
-    enum OpaqueBundlePolicy { case skip, aggregate /*, descend */ }
 
     private let includeFiles: Bool
     private let maxDepth: Int
     private let workerCountHint: Int
     private let sizeKind: SizeKind
-    private let opaquePolicy: OpaqueBundlePolicy
     private let stayOnDevice: Bool
 
     private var rootDev: UInt64 = 0
@@ -25,13 +23,11 @@ final class ParallelScanner {
         maxDepth: Int = .max,
         workerCountHint: Int? = nil,
         sizeKind: SizeKind = .allocated,
-        opaquePolicy: OpaqueBundlePolicy = .aggregate,
         stayOnDevice: Bool = true
     ) {
         self.includeFiles = includeFiles
         self.maxDepth = maxDepth
         self.sizeKind = sizeKind
-        self.opaquePolicy = opaquePolicy
         self.stayOnDevice = stayOnDevice
         let c = ProcessInfo.processInfo.activeProcessorCount
         self.workerCountHint = workerCountHint ?? max(1, min(c * 8, c + 24))
@@ -98,26 +94,6 @@ final class ParallelScanner {
             case .directory:
                 if !visited.insertIfAbsent(key) { continue }
 
-                if isOpaqueBundlePath(m.path) {
-                    switch opaquePolicy {
-                    case .skip:
-                        if includeFiles {
-                            let child = FileNode(path: m.path, type: .directory, parent: dirNode, depth: dirNode.depth + 1)
-                            dirNode.addChild(child)
-                        }
-                        continue
-                    case .aggregate:
-                        let bytes = aggregateDirectoryBytesOpaque(at: m.path)
-                        if includeFiles {
-                            let child = FileNode(path: m.path, type: .directory, parent: dirNode, depth: dirNode.depth + 1)
-                            child.storeImmediateSize(bytes)
-                            dirNode.addChild(child)
-                        }
-                        if bytes != 0 { dirNode.addToAggregate(bytes) }
-                        continue
-                    }
-                }
-
                 let child = FileNode(path: m.path, type: .directory, parent: dirNode, depth: dirNode.depth + 1)
                 dirNode.addChild(child)
                 directories.append(child)
@@ -164,18 +140,6 @@ final class ParallelScanner {
         }
     }
 
-    @inline(__always)
-    private func isOpaqueBundlePath(_ path: String) -> Bool {
-        let ext = (path as NSString).pathExtension.lowercased()
-        switch ext {
-        case "app", "framework", "bundle", "plugin", "kext", "appex", "xpc",
-             "scptd", "qlgenerator", "wdgt", "lproj", "xcassets",
-             "xcframework", "xcarchive", "dsym", "pkg":
-            return true
-        default:
-            return false
-        }
-    }
 
     @inline(__always)
     private func canEnter(_ path: String) -> Bool {
@@ -252,44 +216,5 @@ final class ParallelScanner {
         return results
     }
 
-    @inline(__always)
-    private func aggregateDirectoryBytesOpaque(at root: String) -> UInt64 {
-        var total: UInt64 = 0
-        var stack: [String] = [root]
-
-        while let path = stack.popLast() {
-            guard canEnter(path), let dir = opendir(path) else { continue }
-            let dfd = dirfd(dir)
-            let needsSlash = (path == "/") ? "" : "/"
-            defer { closedir(dir) }
-
-            while let ent = readdir(dir) {
-                var nameBuf = ent.pointee.d_name
-                let namePtr = withUnsafePointer(to: &nameBuf) {
-                    UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self)
-                }
-                if namePtr.pointee == 46 {
-                    let c1 = (namePtr + 1).pointee
-                    if c1 == 0 || (c1 == 46 && (namePtr + 2).pointee == 0) { continue }
-                }
-
-                var st = stat()
-                if fstatat(dfd, namePtr, &st, AT_SYMLINK_NOFOLLOW) != 0 { continue }
-
-                if stayOnDevice && devU64(st.st_dev) != rootDev { continue }
-                
-                let mode = st.st_mode & S_IFMT
-                switch mode {
-                case S_IFREG:
-                    total &+= bytes(for: st)
-                case S_IFDIR:
-                    let name = String(cString: namePtr)
-                    stack.append(path + needsSlash + name)
-                default:
-                    continue
-                }
-            }
-        }
-        return total
-    }
+    
 }
