@@ -98,10 +98,6 @@ final class ParallelScanner {
             case .directory:
                 if !visited.insertIfAbsent(key) { continue }
 
-                if shouldPruneTopLevelSystem(dirNode: dirNode, childPath: m.path) {
-                    continue
-                }
-
                 if isOpaqueBundlePath(m.path) {
                     switch opaquePolicy {
                     case .skip:
@@ -168,21 +164,6 @@ final class ParallelScanner {
         }
     }
 
-
-    @inline(__always)
-    private func shouldPrune(_ path: String) -> Bool {
-        if path.hasPrefix("/Library/Developer/CoreSimulator/Volumes") { return true }
-        return false
-    }
-
-    @inline(__always)
-    private func shouldPruneTopLevelSystem(dirNode: FileNode, childPath: String) -> Bool {
-        if dirNode.depth == 0 && dirNode.path == "/" && childPath == "/System" {
-            return true
-        }
-        return false
-    }
-
     @inline(__always)
     private func isOpaqueBundlePath(_ path: String) -> Bool {
         let ext = (path as NSString).pathExtension.lowercased()
@@ -218,7 +199,7 @@ final class ParallelScanner {
 
     private func readChildrenFast(at path: String, parentDepth: Int) -> [Metadata] {
         var results: [Metadata] = []
-        if shouldPrune(path) { return results }
+
         guard canEnter(path) else { return results }
 
         guard let dir = opendir(path) else { return results }
@@ -240,7 +221,7 @@ final class ParallelScanner {
             var st = stat()
             if fstatat(dfd, namePtr, &st, AT_SYMLINK_NOFOLLOW) != 0 { continue }
 
-            let dev = devU64(st.st_dev)       // was: UInt64(st.st_dev)
+            let dev = devU64(st.st_dev)
             if stayOnDevice && dev != rootDev && parentDepth >= 0 {
                 continue
             }
