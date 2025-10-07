@@ -6,11 +6,15 @@ extension ParallelScanner {
     
     func run(_ rootPath: String) -> FileNode {
         var st = stat()
+        
+        //Get Root
         if lstat(rootPath, &st) == 0 {
             rootDev = devU64(st.st_dev)
         }
 
+        //Initialise Tree Root Node
         let root = FileNode(path: rootPath, type: .directory, parent: nil, depth: 0)
+        
         dirTaskCount.store(1, ordering: .relaxed)
         taskQueue.enqueue(root)
 

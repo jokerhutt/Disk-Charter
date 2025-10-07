@@ -5,7 +5,7 @@ final class BlockingQueue<T> {
     private var storage: [T?]
     private var head = 0, tail = 0, count = 0
     private var closed = false
-    private let condition = NSCondition()
+    private let queueLock = NSCondition()
 
     init(initialCapacity: Int = 4096) {
         let cap = max(16, initialCapacity.getNextPowerOfTwo())
@@ -13,42 +13,42 @@ final class BlockingQueue<T> {
     }
 
     func enqueue(_ element: T) {
-        condition.lock()
-        guard !closed else { condition.unlock(); return }
+        queueLock.lock()
+        guard !closed else { queueLock.unlock(); return }
         if count == storage.count { grow() }
         storage[tail] = element
         tail = (tail &+ 1) & (storage.count - 1)
         count &+= 1
-        condition.signal()
-        condition.unlock()
+        queueLock.signal()
+        queueLock.unlock()
     }
 
     func enqueueMany(_ items: [T]) {
-        condition.lock()
-        guard !closed else { condition.unlock(); return }
+        queueLock.lock()
+        guard !closed else { queueLock.unlock(); return }
         if count + items.count > storage.count { grow(toFit: count + items.count) }
         for e in items {
             storage[tail] = e
             tail = (tail &+ 1) & (storage.count - 1)
             count &+= 1
         }
-        condition.broadcast()
-        condition.unlock()
+        queueLock.broadcast()
+        queueLock.unlock()
     }
 
     func dequeue() -> T? {
-        condition.lock()
-        while count == 0 && !closed { condition.wait() }
-        guard count > 0 else { condition.unlock(); return nil }
+        queueLock.lock()
+        while count == 0 && !closed { queueLock.wait() }
+        guard count > 0 else { queueLock.unlock(); return nil }
         let e = storage[head]
         storage[head] = nil
         head = (head &+ 1) & (storage.count - 1)
         count &-= 1
-        condition.unlock()
+        queueLock.unlock()
         return e!
     }
 
-    func close() { condition.lock(); closed = true; condition.broadcast(); condition.unlock() }
+    func close() { queueLock.lock(); closed = true; queueLock.broadcast(); queueLock.unlock() }
 
     private func grow() { grow(toFit: storage.count << 1) }
     private func grow(toFit need: Int) {

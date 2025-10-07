@@ -51,33 +51,30 @@ final class ParallelScanner {
 
         let entries = readChildrenFast(at: dirNode.path, parentDepth: dirNode.depth)
         var immediateFileBytes: UInt64 = 0
+        var directories: [FileNode] = []
+
 
         dirNode.reserveChildrenCapacity(entries.count)
-
-        var directories: [FileNode] = []
         directories.reserveCapacity(entries.count >> 1)
 
         for m in entries {
             let key = DevIno(dev: m.dev, ino: m.ino)
 
             switch m.type {
+                
             case .file:
                 if visited.insertIfAbsent(key) {
-                    immediateFileBytes &+= m.sizeIfFile
+                    addFileBytes(&immediateFileBytes, meta: m)
                 }
                 if includeFiles {
-                    let child = FileNode(path: m.path, type: .file, parent: dirNode, depth: dirNode.depth + 1)
-                    child.storeImmediateSize(m.sizeIfFile)
-                    dirNode.addChild(child)
+                    addChildFileNode(parentNode: dirNode, metaData: m)
                 }
-
+            
             case .directory:
                 if !visited.insertIfAbsent(key) { continue }
-
-                let child = FileNode(path: m.path, type: .directory, parent: dirNode, depth: dirNode.depth + 1)
-                dirNode.addChild(child)
+                let child = addChildDirectoryNode(parentNode: dirNode, path: m.path)
                 directories.append(child)
-
+            
             case .symlink, .unknown:
                 continue
             }
