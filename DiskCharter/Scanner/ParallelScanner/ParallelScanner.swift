@@ -2,58 +2,6 @@ import Foundation
 import Darwin
 import Atomics
 
-private struct DevIno: Hashable {
-    let dev: UInt64
-    let ino: UInt64
-}
-
-private final class ShardedVisited {
-    private final class Bucket {
-        let lock = NSLock()
-        var set = Set<DevIno>()
-    }
-    private let buckets: [Bucket]
-    private let mask: Int
-
-    init(capacityPowerOfTwo: Int = 64) {
-        let count = max(16, capacityPowerOfTwo).nextPowerOfTwo()
-        var tmp: [Bucket] = []
-        tmp.reserveCapacity(count)
-        for _ in 0..<count { tmp.append(Bucket()) }
-        buckets = tmp
-        mask = count - 1
-    }
-
-    @inline(__always)
-    private func index(for key: DevIno) -> Int {
-        var h = key.dev &* 0x9E3779B185EBCA87 &+ key.ino
-        h ^= h >> 33
-        h &*= 0xff51afd7ed558ccd
-        return Int(truncatingIfNeeded: h) & mask
-    }
-
-    @inline(__always)
-    func insert(_ key: DevIno) -> Bool {
-        let i = index(for: key)
-        let b = buckets[i]
-        b.lock.lock()
-        let inserted = b.set.insert(key).inserted
-        b.lock.unlock()
-        return inserted
-    }
-}
-
-private extension Int {
-    func nextPowerOfTwo() -> Int {
-        var v = self - 1
-        v |= v >> 1; v |= v >> 2; v |= v >> 4; v |= v >> 8; v |= v >> 16
-        #if arch(arm64) || arch(x86_64)
-        v |= v >> 32
-        #endif
-        return v + 1
-    }
-}
-
 
 final class ParallelScanner {
     private let taskQueue = BlockingQueue<FileNode>()
@@ -70,7 +18,7 @@ final class ParallelScanner {
     private let stayOnDevice: Bool
 
     private var rootDev: UInt64 = 0
-    private let visited = ShardedVisited(capacityPowerOfTwo: 128)
+    private let visited = AlreadyVisitedList(initialBucketCount: 128)
 
     init(
         includeFiles: Bool = false,
@@ -138,7 +86,7 @@ final class ParallelScanner {
 
             switch m.type {
             case .file:
-                if visited.insert(key) {
+                if visited.insertIfAbsent(key) {
                     immediateFileBytes &+= m.sizeIfFile
                 }
                 if includeFiles {
@@ -148,7 +96,7 @@ final class ParallelScanner {
                 }
 
             case .directory:
-                if !visited.insert(key) { continue }
+                if !visited.insertIfAbsent(key) { continue }
 
                 if shouldPruneTopLevelSystem(dirNode: dirNode, childPath: m.path) {
                     continue
@@ -223,14 +171,7 @@ final class ParallelScanner {
 
     @inline(__always)
     private func shouldPrune(_ path: String) -> Bool {
-        if path.hasPrefix("/private/var/folders") { return true }
-        if path.hasPrefix("/System/Volumes/Data/private/var/folders") { return true }
-        if path.hasPrefix("/System/Library/Templates") { return true }
-        if path.hasPrefix("/System/Volumes/Preboot") { return true }
-        if path.hasPrefix("/System/Volumes/Update") { return true }
-        if path.hasPrefix("/System/Volumes/VM") { return true }
         if path.hasPrefix("/Library/Developer/CoreSimulator/Volumes") { return true }
-        if path == "/dev" { return true }
         return false
     }
 
